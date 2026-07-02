@@ -350,7 +350,7 @@ app.put("/api/settings", authenticate, async (req: AuthRequest, res) => {
 app.get("/api/content/:page", async (req, res) => {
   const sections = await prisma.siteSection.findMany({ where: { page: (req.params as any).page } })
   const obj: Record<string, any> = {}
-  sections.forEach((s) => { obj[s.section] = JSON.parse(s.content) })
+  sections.forEach((s: any) => { obj[s.section] = JSON.parse(s.content) })
   res.json(obj)
 })
 
@@ -456,7 +456,7 @@ app.get("/api/analytics", authenticate, async (req, res) => {
     prisma.analyticsEvent.groupBy({ by: ["country"], where, _count: true, orderBy: { _count: { country: "desc" } }, take: 10 }),
     prisma.analyticsEvent.groupBy({ by: ["referrer"], where, _count: true, orderBy: { _count: { referrer: "desc" } }, take: 10 }),
   ])
-  res.json({ totalVisitors, totalPageViews, byPage: byPage.filter((p) => p.page), byCountry: byCountry.filter((c) => c.country), byReferrer: byReferrer.filter((r) => r.referrer) })
+  res.json({ totalVisitors, totalPageViews, byPage: byPage.filter((p: any) => p.page), byCountry: byCountry.filter((c: any) => c.country), byReferrer: byReferrer.filter((r: any) => r.referrer) })
 })
 
 // ─── SEO ──────────────────────────────────────────────
@@ -543,14 +543,14 @@ app.get("/api/public/categories", async (_req, res) => {
 app.get("/api/public/settings", async (_req, res) => {
   const settings = await prisma.setting.findMany()
   const obj: Record<string, string> = {}
-  settings.forEach((s) => { obj[s.key] = s.value })
+  settings.forEach((s: any) => { obj[s.key] = s.value })
   res.json(obj)
 })
 
 app.get("/api/public/content/:page", async (req, res) => {
   const sections = await prisma.siteSection.findMany({ where: { page: (req.params as any).page } })
   const obj: Record<string, any> = {}
-  sections.forEach((s) => { obj[s.section] = JSON.parse(s.content) })
+  sections.forEach((s: any) => { obj[s.section] = JSON.parse(s.content) })
   res.json(obj)
 })
 
