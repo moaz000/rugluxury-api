@@ -563,16 +563,17 @@ app.get("/api/activity", authenticate, async (req, res) => {
   res.json({ items, total })
 })
 
-// ─── Start Server ────────────────────────────────────
-const server = app.listen(config.port, () => {
-  console.log(`🚀 RugLuxury API running on port ${config.port}`)
-})
-
-function gracefulShutdown() {
-  console.log("Shutting down gracefully...")
-  server.close(() => prisma.$disconnect().then(() => process.exit(0)))
+// ─── Start Server (local only) ──────────────────────
+if (!process.env.VERCEL) {
+  const server = app.listen(config.port, () => {
+    console.log(`🚀 RugLuxury API running on port ${config.port}`)
+  })
+  function gracefulShutdown() {
+    console.log("Shutting down gracefully...")
+    server.close(() => prisma.$disconnect().then(() => process.exit(0)))
+  }
+  process.on("SIGTERM", gracefulShutdown)
+  process.on("SIGINT", gracefulShutdown)
 }
-process.on("SIGTERM", gracefulShutdown)
-process.on("SIGINT", gracefulShutdown)
 
 export default app
