@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("employee") // admin, manager, employee
+  phone     String?
+  avatar    String?
+  active    Boolean  @default(true)
+  twoFactor Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  loginLogs   LoginLog[]
+  activityLog ActivityLog[]
+  orders      Order[]        @relation("OrderSalesman")
+}
+
+model LoginLog {
+  id        String   @id @default(cuid())
+  userId    String
+  ip        String?
+  userAgent String?
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  nameAr      String?
+  slug        String   @unique
+  description String?
+  image       String?
+  parentId    String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  nameAr      String?
+  slug        String   @unique
+  description String?
+  descriptionAr String?
+  price       Float
+  salePrice   Float?
+  sku         String   @unique
+  categoryId  String?
+  style       String?
+  material    String?
+  origin      String?
+  colors      String   @default("[]") // JSON array
+  sizes       String   @default("[]") // JSON array
+  features    String?  // JSON array
+  inStock     Boolean  @default(true)
+  isNew       Boolean  @default(false)
+  isBestSeller Boolean @default(false)
+  isCustomizable Boolean @default(false)
+  rating      Float    @default(0)
+  reviews     Int      @default(0)
+  seoTitle    String?
+  seoDesc     String?
+  sortOrder   Int      @default(0)
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category  Category?  @relation(fields: [categoryId], references: [id])
+  images    ProductImage[]
+  orderItems OrderItem[]
+}
+
+model ProductImage {
+  id        String @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  sortOrder Int    @default(0)
+  isFeatured Boolean @default(false)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id           String   @id @default(cuid())
+  orderNumber  String   @unique
+  customerId   String?
+  customerName String
+  customerEmail String?
+  customerPhone String?
+  shippingAddress String?
+  total        Float
+  status       String   @default("pending") // pending, confirmed, processing, shipped, delivered, cancelled
+  notes        String?
+  source       String?  // website, whatsapp, instagram, etc.
+  salesmanId   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items    OrderItem[]
+  customer Customer?  @relation(fields: [customerId], references: [id])
+  salesman User?      @relation("OrderSalesman", fields: [salesmanId], references: [id])
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String?
+  name      String
+  price     Float
+  quantity  Int
+  size      String?
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  notes     String?
+  status    String   @default("active") // active, inactive, lead
+  source    String?  // website, whatsapp, referral, etc.
+  lastContact DateTime?
+  totalSpent Float   @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  read      Boolean  @default(false)
+  replied   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model SiteSection {
+  id        String @id @default(cuid())
+  page      String // homepage, about, etc.
+  section   String // hero, features, testimonials, etc.
+  content   String @default("{}") // JSON blob for the section's editable fields
+  updatedAt DateTime @updatedAt
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  url       String
+  filename  String
+  mimeType  String
+  size      Int
+  folder    String?  @default("general")
+  alt       String?
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String   // create, update, delete, login, logout
+  entity    String   // product, order, user, setting, etc.
+  entityId  String?
+  details   String?  // JSON
+  ip        String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  type      String   // pageview, visitor, click, form_submit
+  page      String?
+  referrer  String?
+  country   String?
+  ip        String?
+  userAgent String?
+  metadata  String?  // JSON
+  createdAt DateTime @default(now())
+}
+
+model Backup {
+  id        String   @id @default(cuid())
+  filename  String
+  size      Int
+  type      String   // automatic, manual
+  status    String   @default("completed")
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String?
+  title     String
+  message   String
+  type      String   // info, warning, success, error
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
